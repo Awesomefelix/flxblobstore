@@ -79,22 +79,22 @@ stages:
                 [
                   {
                     "name": "KEY_VAULT_URL",
-                    "value": "$(https://flxlock.vault.azure.net/secrets/KEY-VAULT-URL/)",
+                    "value": "@Microsoft.KeyVault(SecretUri=https://flxlock.vault.azure.net/secrets/KEY-VAULT-URL/)",
                     "slotSetting": false
                   },
                   {
                     "name": "STORAGE_ACCOUNT_NAME",
-                    "value": "$(https://flxlock.vault.azure.net/secrets/STORAGE-ACCOUNT-NAME/)",
+                    "value": "@Microsoft.KeyVault(SecretUri=https://flxlock.vault.azure.net/secrets/STORAGE-ACCOUNT-NAME/)",
                     "slotSetting": false
                   },
                   {
                     "name": "CONTAINER_NAME",
-                    "value": "$(https://flxlock.vault.azure.net/secrets/CONTAINER-NAME/)",
+                    "value": "@Microsoft.KeyVault(SecretUri=https://flxlock.vault.azure.net/secrets/CONTAINER-NAME/)",
                     "slotSetting": false
                   },
                   {
                     "name": "STORAGE_KEY_SECRET_NAME",
-                    "value": "$(https://flxlock.vault.azure.net/secrets/STORAGE-KEY-SECRET-NAME/)",
+                    "value": "@Microsoft.KeyVault(SecretUri=https://flxlock.vault.azure.net/secrets/STORAGE-KEY-SECRET-NAME/)",
                     "slotSetting": false
                   },
                   {
@@ -104,7 +104,7 @@ stages:
                   },
                   {
                     "name": "PORT",
-                    "value": "$(https://flxlock.vault.azure.net/secrets/PORT/)",
+                    "value": "8080",
                     "slotSetting": false
                   }
                 ]
