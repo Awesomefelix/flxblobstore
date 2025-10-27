@@ -5,12 +5,12 @@ trigger:
   - main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: ''
 
 variables:
-  azureSubscription: 'your-azure-service-connection'  # Update with your service connection name
-  appName: 'your-app-service-name'                    # Update with your App Service name
-  resourceGroup: 'your-resource-group'                # Update with your resource group name
+  azureSubscription: 'FLX'  # Update with your service connection name
+  appName: 'flxstore'                    # Update with your App Service name
+  resourceGroup: 'FLX-TEST'                # Update with your resource group name
   nodeVersion: '20.x'
 
 stages:
@@ -79,27 +79,32 @@ stages:
                 [
                   {
                     "name": "KEY_VAULT_URL",
-                    "value": "$(KEY_VAULT_URL)",
+                    "value": "$(https://flxlock.vault.azure.net/secrets/KEY-VAULT-URL/)",
                     "slotSetting": false
                   },
                   {
                     "name": "STORAGE_ACCOUNT_NAME",
-                    "value": "$(STORAGE_ACCOUNT_NAME)",
+                    "value": "$(https://flxlock.vault.azure.net/secrets/STORAGE-ACCOUNT-NAME/)",
                     "slotSetting": false
                   },
                   {
                     "name": "CONTAINER_NAME",
-                    "value": "$(CONTAINER_NAME)",
+                    "value": "$(https://flxlock.vault.azure.net/secrets/CONTAINER-NAME/)",
                     "slotSetting": false
                   },
                   {
                     "name": "STORAGE_KEY_SECRET_NAME",
-                    "value": "$(STORAGE_KEY_SECRET_NAME)",
+                    "value": "$(https://flxlock.vault.azure.net/secrets/STORAGE-KEY-SECRET-NAME/)",
                     "slotSetting": false
                   },
                   {
                     "name": "NODE_ENV",
                     "value": "production",
+                    "slotSetting": false
+                  },
+                  {
+                    "name": "PORT",
+                    "value": "$(https://flxlock.vault.azure.net/secrets/PORT/)",
                     "slotSetting": false
                   }
                 ]
