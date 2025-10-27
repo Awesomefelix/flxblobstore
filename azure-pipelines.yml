@@ -5,7 +5,7 @@ trigger:
   - main
 
 pool:
-  name: ''
+  name: 'flxbuilder'
 
 variables:
   azureSubscription: 'FLX'  # Update with your service connection name
