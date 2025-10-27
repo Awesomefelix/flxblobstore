@@ -1,17 +1,21 @@
 import express from 'express';
 import multer from 'multer';
-import dotenv from 'dotenv';
 import { SecretClient } from '@azure/keyvault-secrets';
 import { DefaultAzureCredential } from '@azure/identity';
 import { BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob';
 import path from 'path';
 import fs from 'fs';
+import dotenv from 'dotenv';
 
-dotenv.config();
+// Only load .env file in development (not in production on Azure)
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
+const host = process.env.WEBSITE_HOSTNAME ? '0.0.0.0' : 'localhost';
 
 // Set view engine to EJS
 app.set('view engine', 'ejs');
@@ -63,9 +67,18 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     const containerClient = blobServiceClient.getContainerClient(containerName);
     await containerClient.createIfNotExists();
 
-    const blobName = Date.now() + '-' + req.file.originalname.replace(/\s+/g, '-');
+    // Sanitize filename for blob storage (remove invalid characters)
+    const safeFilename = req.file.originalname
+      .replace(/[^a-zA-Z0-9.-]/g, '_')  // Replace invalid chars with underscore
+      .replace(/\s+/g, '_')              // Replace spaces with underscore
+      .replace(/_{2,}/g, '_')            // Replace multiple underscores with single
+      .replace(/^_+|_+$/g, '');          // Remove leading/trailing underscores
+    
+    const blobName = Date.now() + '-' + safeFilename;
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-    await blockBlobClient.uploadData(req.file.buffer);
+    await blockBlobClient.uploadData(req.file.buffer, {
+      blobHTTPHeaders: { blobContentType: req.file.mimetype }
+    });
 
     const url = blockBlobClient.url;
     res.send(`<div class="success-message"><h2>✅ Uploaded: <a href="${url}" target="_blank">${blobName}</a></h2><p><a href="/">Upload another</a> | <a href="/gallery">View Gallery</a></p></div><style>${fs.readFileSync(path.join(process.cwd(), 'public/css/style.css'), 'utf8')}</style>`);
@@ -92,8 +105,8 @@ app.get('/gallery', async (req, res) => {
   }
 });
 
-const listener = app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+const listener = app.listen(port, host, () => {
+  console.log(`Server running on http://${host}:${port}`);
 });
 
 export default listener;
