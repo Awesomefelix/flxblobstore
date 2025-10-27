@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gallery - Azure Blob Upload</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <h1>🖼️ Uploaded Images</h1>
+
+    <p class="hint"><a href="/">← Back to Upload</a></p>
+
+    <div class="upload-list">
+      <% if (files && files.length > 0) { %>
+        <% files.forEach(file => { %>
+          <div>
+            <img src="<%= file.url %>" alt="<%= file.name %>" />
+            <p><%= file.name %></p>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <p class="hint">No images uploaded yet. <a href="/">Upload one now!</a></p>
+      <% } %>
+    </div>
+  </body>
+</html>
