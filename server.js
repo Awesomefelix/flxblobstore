@@ -28,6 +28,9 @@ app.use(express.static('public'));
 const keyVaultUrl = process.env.KEY_VAULT_URL;
 const storageAccountName = process.env.STORAGE_ACCOUNT_NAME;
 const containerName = process.env.CONTAINER_NAME || 'images';
+// For now, use the storage account key directly (not recommended for production)
+// TODO: Set up Key Vault properly
+const storageAccountKey = process.env.STORAGE_ACCOUNT_KEY || process.env.STORAGE_KEY_SECRET_NAME;
 const storageKeySecretName = process.env.STORAGE_KEY_SECRET_NAME || 'StorageAccountKey';
 
 if (!keyVaultUrl || !storageAccountName) {
@@ -45,9 +48,24 @@ const credential = new DefaultAzureCredential();
 const secretClient = new SecretClient(keyVaultUrl, credential);
 
 async function getStorageCredentials() {
-  // Read storage key from Key Vault
-  const secret = await secretClient.getSecret(storageKeySecretName);
-  const accountKey = secret.value;
+  let accountKey;
+  
+  // Check if we have the storage account key directly in environment
+  if (storageAccountKey && storageAccountKey.length > 50) {
+    // Likely the storage account key is set directly
+    accountKey = storageAccountKey;
+    console.log('Using storage account key from environment variable');
+  } else {
+    // Try to read from Key Vault
+    try {
+      const secret = await secretClient.getSecret(storageKeySecretName);
+      accountKey = secret.value;
+      console.log('Successfully retrieved storage account key from Key Vault');
+    } catch (err) {
+      console.error('Failed to retrieve key from Key Vault:', err.message);
+      throw new Error('Unable to get storage account credentials');
+    }
+  }
 
   // Create StorageSharedKeyCredential for BlobServiceClient
   const sharedKeyCredential = new StorageSharedKeyCredential(storageAccountName, accountKey);
