@@ -35,6 +35,12 @@ if (!keyVaultUrl || !storageAccountName) {
   process.exit(1);
 }
 
+console.log('Configuration loaded:');
+console.log('  Key Vault URL:', keyVaultUrl);
+console.log('  Storage Account:', storageAccountName);
+console.log('  Container:', containerName);
+console.log('  Secret Name:', storageKeySecretName);
+
 const credential = new DefaultAzureCredential();
 const secretClient = new SecretClient(keyVaultUrl, credential);
 
