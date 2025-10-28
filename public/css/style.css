@@ -15,13 +15,19 @@ h1 {
   color: #58a6ff;
   text-shadow: 0 0 10px rgba(88, 166, 255, 0.8);
   margin-bottom: 30px;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #58a6ff, #7ee787);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 form {
   background: #161b22;
   padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 0 15px rgba(88, 166, 255, 0.2);
+  border-radius: 12px;
+  border: 1px solid #30363d;
+  box-shadow: 0 0 20px rgba(88, 166, 255, 0.12);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -42,8 +48,8 @@ button {
   background: linear-gradient(90deg, #0a84ff, #0078d4);
   border: none;
   color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 12px 24px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: bold;
   transition: all 0.3s ease;
@@ -51,32 +57,38 @@ button {
 
 button:hover {
   background: linear-gradient(90deg, #0078d4, #0a84ff);
-  box-shadow: 0 0 10px rgba(88, 166, 255, 0.6);
+  box-shadow: 0 0 12px rgba(88, 166, 255, 0.6);
+  transform: translateY(-1px);
 }
 
 .upload-list {
   margin-top: 40px;
-  width: 80%;
-  max-width: 600px;
+  width: 90%;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
 }
 
 .upload-list img {
   width: 100%;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 0 10px rgba(88, 166, 255, 0.3);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 10px rgba(88, 166, 255, 0.25);
+  border: 1px solid #30363d;
 }
 
 .upload-list p {
   text-align: center;
   color: #8b949e;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .success-message {
   background: #161b22;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
+  border: 1px solid #30363d;
   margin-top: 20px;
   text-align: center;
 }
@@ -92,7 +104,7 @@ button:hover {
 
 .hint {
   color: #8b949e;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   margin-top: 20px;
 }
 
