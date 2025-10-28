@@ -93,6 +93,11 @@ stages:
                     "slotSetting": false
                   },
                   {
+                    "name": "STORAGE_ACCOUNT_KEY",
+                    "value": "@Microsoft.KeyVault(SecretUri=https://flxlock.vault.azure.net/secrets/STORAGE-ACCOUNT-KEY/)",
+                    "slotSetting": false
+                  },
+                  {
                     "name": "STORAGE_KEY_SECRET_NAME",
                     "value": "@Microsoft.KeyVault(SecretUri=https://flxlock.vault.azure.net/secrets/STORAGE-KEY-SECRET-NAME/)",
                     "slotSetting": false
