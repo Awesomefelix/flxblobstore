@@ -13,6 +13,8 @@
       <button type="submit">Upload to Drive</button>
     </form>
 
-    <p class="hint">Go to <a href="/gallery">Gallery</a> to view your uploads.</p>
+    <% if (!flags || flags.enableGallery !== false) { %>
+      <p class="hint">Go to <a href="/gallery">Gallery</a> to view your uploads.</p>
+    <% } %>
   </body>
 </html>
