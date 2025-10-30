@@ -1,6 +1,3 @@
-# Azure DevOps Pipeline for Node.js Azure Blob Storage Uploader
-# Deploys to Azure App Service
-
 trigger:
   - main
 
@@ -17,7 +14,7 @@ variables:
   # -----------------------------------------------------------
   artifactFeedName: 'flx-deployment-packages'
   # Define the package name using the app name and build ID for versioning
-  universalPackageName: '$(appName)-$(Build.BuildId)'
+  universalPackageName: '$(appName)' # Changed to just appName, versioning handled below
 
 stages:
 - stage: Build
@@ -53,16 +50,18 @@ stages:
 
     # -----------------------------------------------------------
     # NEW STEP: Publish the ZIP as a Universal Package to Azure Artifacts
-    # Note: This replaces the traditional PublishBuildArtifacts task.
+    # FIX: Using the project scope/feed name format for publishFeed 
+    # to ensure the feed ID is found. Also ensuring the package name is simple.
     # -----------------------------------------------------------
     - task: UniversalPackages@0
       displayName: 'Publish Deployment Package to Artifacts Feed'
       inputs:
         command: 'publish'
-        # Name of the feed (defined in variables)
-        publishFeed: '$(artifactFeedName)'
-        # Name of the package (using appName and BuildId for versioning)
-        packageName: '$(universalPackageName)'
+        # FIX: Explicitly specify the feed using the Project name and Feed name.
+        # Assuming your project name is 'flxblobstore' (from previous context).
+        publishFeed: '$(System.TeamProject)/$(artifactFeedName)'
+        # Using the simplified package name
+        packageName: '$(appName)'
         # Path to the directory containing the files to publish
         publishDirectory: '$(Build.ArtifactStagingDirectory)'
         # The version number uses the pipeline run ID
