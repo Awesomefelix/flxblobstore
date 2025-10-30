@@ -8,9 +8,9 @@ pool:
   name: 'flxbuilder'
 
 variables:
-  azureSubscription: 'FLX'  # Update with your service connection name
-  appName: 'flxstore'                    # Update with your App Service name
-  resourceGroup: 'FLX-TEST'                # Update with your resource group name
+  azureSubscription: 'FLX'  #
+  appName: 'flxstore'                    # 
+  resourceGroup: 'FLX-TEST'                # 
   nodeVersion: '20.x'
 
 stages:
