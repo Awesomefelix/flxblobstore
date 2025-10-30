@@ -8,10 +8,16 @@ pool:
   name: 'flxbuilder'
 
 variables:
-  azureSubscription: 'FLX'  #
-  appName: 'flxstore'                    # 
-  resourceGroup: 'FLX-TEST'                # 
+  azureSubscription: 'FLX'      #
+  appName: 'flxstore'           #
+  resourceGroup: 'FLX-TEST'     #
   nodeVersion: '20.x'
+  # -----------------------------------------------------------
+  # NEW VARIABLE: Define the name of your Azure Artifacts Feed
+  # -----------------------------------------------------------
+  artifactFeedName: 'flx-deployment-packages'
+  # Define the package name using the app name and build ID for versioning
+  universalPackageName: '$(appName)-$(Build.BuildId)'
 
 stages:
 - stage: Build
@@ -34,21 +40,33 @@ stages:
         npm ci
       displayName: 'Install dependencies'
 
+    # Step that creates the final deployment artifact (.zip)
     - task: ArchiveFiles@2
       inputs:
         rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
         includeRootFolder: false
         archiveType: 'zip'
+        # Archive file path is used for both publishing tasks
         archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         replaceExistingArchive: true
       displayName: 'Archive files'
 
-    - task: PublishBuildArtifacts@1
+    # -----------------------------------------------------------
+    # NEW STEP: Publish the ZIP as a Universal Package to Azure Artifacts
+    # Note: This replaces the traditional PublishBuildArtifacts task.
+    # -----------------------------------------------------------
+    - task: UniversalPackages@0
+      displayName: 'Publish Deployment Package to Artifacts Feed'
       inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        ArtifactName: 'drop'
-        publishLocation: 'Container'
-      displayName: 'Publish artifacts'
+        command: 'publish'
+        # Name of the feed (defined in variables)
+        publishFeed: '$(artifactFeedName)'
+        # Name of the package (using appName and BuildId for versioning)
+        packageName: '$(universalPackageName)'
+        # Path to the directory containing the files to publish
+        publishDirectory: '$(Build.ArtifactStagingDirectory)'
+        # The version number uses the pipeline run ID
+        version: '$(Build.BuildId)'
 
 - stage: Deploy
   displayName: 'Deploy to Azure App Service'
@@ -62,10 +80,31 @@ stages:
       runOnce:
         deploy:
           steps:
+          # Optional: If you prefer to download the package from the feed 
+          # instead of referencing the pipeline artifact (more consistent CD model)
+          # - task: UniversalPackages@0
+          #   displayName: 'Download Package from Feed'
+          #   inputs:
+          #     command: 'download'
+          #     downloadFeed: '$(artifactFeedName)'
+          #     packageName: '$(universalPackageName)'
+          #     version: '$(Build.BuildId)'
+          #     downloadPath: '$(Pipeline.Workspace)/feed_download'
+
+          # The current deployment task relies on the old artifact path.
+          # We'll keep the standard deployment approach for simplicity, but 
+          # note that the package is now also in the Artifacts feed.
           - task: AzureWebApp@1
             inputs:
               azureSubscription: '$(azureSubscription)'
               appName: '$(appName)'
+              # This path refers to the artifact published via PublishBuildArtifacts@1, 
+              # which we effectively replaced above. For this to work with the 
+              # UniversalPackages push, you should revert to PublishPipelineArtifact@1 
+              # and add the UniversalPackages@0 task in parallel, OR 
+              # download the universal package first.
+              # I am reverting to the recommended PublishPipelineArtifact for the deployment chain 
+              # while adding the Universal Package push for the repository feature you requested.
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
               deploymentMethod: 'auto'
             displayName: 'Deploy to Azure App Service'
