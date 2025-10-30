@@ -9,13 +9,10 @@ variables:
   appName: 'flxstore'
   resourceGroup: 'FLX-TEST'
   nodeVersion: '20.x'
-  artifactFeedName: 'FLXSTOREPACKAGES'  # Updated feed name
+  artifactFeedName: 'FLXSTOREPACKAGES'
   universalPackageName: '$(appName)'
 
 stages:
-# -----------------------------
-# BUILD STAGE
-# -----------------------------
 - stage: Build
   displayName: 'Build Application'
   jobs:
@@ -40,19 +37,16 @@ stages:
         replaceExistingArchive: true
       displayName: 'Archive files'
 
-    # ✅ Publish ZIP as Universal Package to FLXSTOREPACKAGES feed
+    # ✅ Fixed: Publish to FLXSTOREPACKAGES feed (project-scoped)
     - task: UniversalPackages@0
       displayName: 'Publish Deployment Package to FLXSTOREPACKAGES Feed'
       inputs:
         command: 'publish'
-        publishFeed: '$(System.TeamProject)/$(artifactFeedName)'
+        publishFeed: 'flxstore/$(artifactFeedName)'   # <-- Correct feed reference
         packageName: '$(appName)'
         publishDirectory: '$(Build.ArtifactStagingDirectory)'
         version: '$(Build.BuildId)'
 
-# -----------------------------
-# DEPLOY STAGE
-# -----------------------------
 - stage: Deploy
   displayName: 'Deploy to Azure App Service'
   dependsOn: Build
@@ -65,26 +59,24 @@ stages:
       runOnce:
         deploy:
           steps:
-          # ✅ Download package from FLXSTOREPACKAGES feed
-          - task: UniversalPackages@0
-            displayName: 'Download Package from FLXSTOREPACKAGES Feed'
-            inputs:
-              command: 'download'
-              downloadFeed: '$(System.TeamProject)/$(artifactFeedName)'
-              packageName: '$(universalPackageName)'
-              version: '$(Build.BuildId)'
-              downloadPath: '$(Pipeline.Workspace)/feed_download'
+          # ✅ Optional: Uncomment this to download the package from the feed instead of pipeline artifact
+          # - task: UniversalPackages@0
+          #   displayName: 'Download Package from FLXSTOREPACKAGES Feed'
+          #   inputs:
+          #     command: 'download'
+          #     downloadFeed: 'flxstore/$(artifactFeedName)'
+          #     packageName: '$(appName)'
+          #     version: '$(Build.BuildId)'
+          #     downloadPath: '$(Pipeline.Workspace)/feed_download'
 
-          # ✅ Deploy downloaded package to Azure App Service
           - task: AzureWebApp@1
             inputs:
               azureSubscription: '$(azureSubscription)'
               appName: '$(appName)'
-              package: '$(Pipeline.Workspace)/feed_download/$(Build.BuildId).zip'
+              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
               deploymentMethod: 'auto'
             displayName: 'Deploy to Azure App Service'
 
-          # ✅ Configure App Settings securely via Key Vault
           - task: AzureAppServiceSettings@1
             inputs:
               azureSubscription: '$(azureSubscription)'
