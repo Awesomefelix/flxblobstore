@@ -1,3 +1,6 @@
+# Azure DevOps Pipeline for Node.js Azure Blob Storage Uploader
+# Deploys to Azure App Service
+
 trigger:
   - main
 
@@ -5,12 +8,10 @@ pool:
   name: 'flxbuilder'
 
 variables:
-  azureSubscription: 'FLX'
-  appName: 'flxstore'
-  resourceGroup: 'FLX-TEST'
+  azureSubscription: 'FLX'  #
+  appName: 'flxstore'                    # 
+  resourceGroup: 'FLX-TEST'                # 
   nodeVersion: '20.x'
-  artifactFeedName: 'FLXSTOREPACKAGES'
-  universalPackageName: '$(appName)'
 
 stages:
 - stage: Build
@@ -23,6 +24,11 @@ stages:
       inputs:
         versionSpec: '$(nodeVersion)'
       displayName: 'Install Node.js'
+
+    - task: UseNode@1
+      inputs:
+        version: '$(nodeVersion)'
+      displayName: 'Use Node.js'
 
     - script: |
         npm ci
@@ -37,18 +43,12 @@ stages:
         replaceExistingArchive: true
       displayName: 'Archive files'
 
-    # ✅ Fixed: Publish to FLXSTOREPACKAGES feed (project-scoped)
-    - task: UniversalPackages@0
-      displayName: 'Publish Deployment Package to FLXSTOREPACKAGES Feed'
+    - task: PublishBuildArtifacts@1
       inputs:
-        command: 'publish'
-        publishDirectory: '$(Build.ArtifactStagingDirectory)'
-        feedsToUse: 'internal'
-        vstsFeedPublish: 'flxstore/$(artifactFeedName)'   # <-- Correct parameter name
-        packagePublishDescription: 'Deployment package for $(appName)'
-        versionOption: 'custom'
-        versionPublish: '$(Build.BuildId)'
-        packagePublishName: '$(appName)'
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+      displayName: 'Publish artifacts'
 
 - stage: Deploy
   displayName: 'Deploy to Azure App Service'
@@ -62,16 +62,6 @@ stages:
       runOnce:
         deploy:
           steps:
-          # ✅ Optional: Uncomment this to download the package from the feed instead of pipeline artifact
-          # - task: UniversalPackages@0
-          #   displayName: 'Download Package from FLXSTOREPACKAGES Feed'
-          #   inputs:
-          #     command: 'download'
-          #     downloadFeed: 'flxstore/$(artifactFeedName)'
-          #     packageName: '$(appName)'
-          #     version: '$(Build.BuildId)'
-          #     downloadPath: '$(Pipeline.Workspace)/feed_download'
-
           - task: AzureWebApp@1
             inputs:
               azureSubscription: '$(azureSubscription)'
