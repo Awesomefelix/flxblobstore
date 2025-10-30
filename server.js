@@ -3,7 +3,6 @@ import multer from 'multer';
 import { SecretClient } from '@azure/keyvault-secrets';
 import { DefaultAzureCredential } from '@azure/identity';
 import { BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob';
-import { AppConfigurationClient } from '@azure/app-configuration';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -32,7 +31,6 @@ const containerName = process.env.CONTAINER_NAME || 'images';
 // Check for storage account key directly in environment
 const storageAccountKey = process.env.STORAGE_ACCOUNT_KEY;
 const storageKeySecretName = process.env.STORAGE_KEY_SECRET_NAME || 'StorageAccountKey';
-const appConfigEndpoint = process.env.APP_CONFIG_ENDPOINT; // e.g. https://<your-config>.azconfig.io
 
 if (!storageAccountName) {
   console.error('Missing STORAGE_ACCOUNT_NAME in environment.');
@@ -45,55 +43,9 @@ console.log('  Storage Account:', storageAccountName);
 console.log('  Container:', containerName);
 console.log('  Secret Name:', storageKeySecretName);
 console.log('  Has Storage Key in env:', !!storageAccountKey);
-console.log('  App Config Endpoint:', appConfigEndpoint);
 
 const credential = new DefaultAzureCredential();
 const secretClient = new SecretClient(keyVaultUrl, credential);
-
-// ------ Feature Flags (Azure App Configuration) ------
-let featureFlags = { };
-let appConfigClient = null;
-
-if (appConfigEndpoint) {
-  try {
-    appConfigClient = new AppConfigurationClient(appConfigEndpoint, credential);
-    console.log('App Configuration client initialized');
-  } catch (err) {
-    console.error('Failed to initialize App Configuration client:', err.message);
-  }
-}
-
-async function refreshFeatureFlags() {
-  if (!appConfigClient) return;
-  try {
-    const flags = { };
-    const iter = appConfigClient.listConfigurationSettings({ keyFilter: '.appconfig.featureflag/*' });
-    for await (const setting of iter) {
-      try {
-        const parsed = JSON.parse(setting.value);
-        // setting.key looks like .appconfig.featureflag/<name>
-        const name = setting.key.split('/')[1];
-        flags[name] = !!parsed.enabled;
-      } catch (e) {
-        // ignore invalid flag entries
-      }
-    }
-    featureFlags = flags;
-    console.log('Feature flags refreshed:', featureFlags);
-  } catch (err) {
-    console.error('Failed to refresh feature flags:', err.message);
-  }
-}
-
-// Initial load and periodic refresh (every 5 minutes)
-refreshFeatureFlags();
-setInterval(refreshFeatureFlags, 5 * 60 * 1000);
-
-// Expose flags to templates
-app.use((req, res, next) => {
-  res.locals.flags = featureFlags;
-  next();
-});
 
 async function getStorageCredentials() {
   let accountKey;
@@ -161,11 +113,8 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// Simple gallery to list blobs (guarded by feature flag 'enableGallery')
+// Simple gallery to list blobs
 app.get('/gallery', async (req, res) => {
-  if (featureFlags.enableGallery === false) {
-    return res.status(404).send('Gallery is disabled');
-  }
   try {
     const blobServiceClient = await getStorageCredentials();
     const containerClient = blobServiceClient.getContainerClient(containerName);
