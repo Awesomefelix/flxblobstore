@@ -42,10 +42,13 @@ stages:
       displayName: 'Publish Deployment Package to FLXSTOREPACKAGES Feed'
       inputs:
         command: 'publish'
-        publishFeed: 'flxstore/$(artifactFeedName)'   # <-- Correct feed reference
-        packageName: '$(appName)'
         publishDirectory: '$(Build.ArtifactStagingDirectory)'
-        version: '$(Build.BuildId)'
+        feedsToUse: 'internal'
+        vstsFeedPublish: 'flxstore/$(artifactFeedName)'   # <-- Correct parameter name
+        packagePublishDescription: 'Deployment package for $(appName)'
+        versionOption: 'custom'
+        versionPublish: '$(Build.BuildId)'
+        packagePublishName: '$(appName)'
 
 - stage: Deploy
   displayName: 'Deploy to Azure App Service'
