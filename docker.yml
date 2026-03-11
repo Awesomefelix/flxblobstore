@@ -27,7 +27,7 @@ stages:
       displayName: 'Build and Push to ACR'
       inputs:
         command: buildAndPush
-        containerRegistry: 'flxstoreacr-connection' # The name of your Docker Registry service connection
+        containerRegistry: 'flx-acr' # The name of your Docker Registry service connection
         repository: '$(imageRepository)'
         dockerfile: '**/Dockerfile'
         tags: |
