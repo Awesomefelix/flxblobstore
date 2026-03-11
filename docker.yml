@@ -2,7 +2,7 @@ trigger:
   - main
 
 pool:
-  name: 'flxbuilder' # Using your custom agent pool
+  vmImage: ubuntu-latest # Using your custom agent pool
 
 variables:
   # Service Connection name created in Azure DevOps
