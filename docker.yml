@@ -1,0 +1,57 @@
+trigger:
+  - main
+
+pool:
+  name: 'flxbuilder' # Using your custom agent pool
+
+variables:
+  # Service Connection name created in Azure DevOps
+  azureSubscription: 'FLX'
+  # The login server for the ACR you created
+  acrLoginServer: 'flxstoreacr.azurecr.io'
+  acrName: 'flxstoreacr'
+  # The name of the image in the registry
+  imageRepository: 'azure-image-uploader'
+  containerAppName: 'flxstore'
+  resourceGroup: 'FLX-TEST'
+  tag: '$(Build.BuildId)'
+
+stages:
+- stage: Build
+  displayName: 'Build and Push'
+  jobs:
+  - job: Build
+    displayName: 'Build Docker Image'
+    steps:
+    - task: Docker@2
+      displayName: 'Build and Push to ACR'
+      inputs:
+        command: buildAndPush
+        containerRegistry: 'flxstoreacr-connection' # The name of your Docker Registry service connection
+        repository: '$(imageRepository)'
+        dockerfile: '**/Dockerfile'
+        tags: |
+          $(tag)
+          latest
+
+- stage: Deploy
+  displayName: 'Deploy to Container App'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: Deploy
+    displayName: 'Update Container App'
+    steps:
+    - task: AzureContainerApps@1
+      inputs:
+        azureSubscription: '$(azureSubscription)'
+        containerAppName: '$(containerAppName)'
+        resourceGroup: '$(resourceGroup)'
+        imageToDeploy: '$(acrLoginServer)/$(imageRepository):$(tag)'
+        # We don't need STORAGE_ACCOUNT_KEY anymore because we use Managed Identity!
+        environmentVariables: |
+          KEY_VAULT_URL=https://flxlock.vault.azure.net/
+          STORAGE_ACCOUNT_NAME=flxcontainer
+          CONTAINER_NAME=images
+          NODE_ENV=production
+          PORT=8080
