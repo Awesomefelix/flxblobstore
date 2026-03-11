@@ -2,15 +2,12 @@ trigger:
   - main
 
 pool:
-  vmImage: ubuntu-latest # Using your custom agent pool
+  vmImage: ubuntu-latest
 
 variables:
-  # Service Connection name created in Azure DevOps
   azureSubscription: 'FLX'
-  # The login server for the ACR you created
   acrLoginServer: 'flxstoreacr.azurecr.io'
   acrName: 'flxstoreacr'
-  # The name of the image in the registry
   imageRepository: 'azure-image-uploader'
   containerAppName: 'flxstore'
   resourceGroup: 'FLX-TEST'
@@ -27,7 +24,7 @@ stages:
       displayName: 'Build and Push to ACR'
       inputs:
         command: buildAndPush
-        containerRegistry: 'flx-acr' # The name of your Docker Registry service connection
+        containerRegistry: 'flx-acr' #dockerregistrySA
         repository: '$(imageRepository)'
         dockerfile: '**/Dockerfile'
         tags: |
@@ -42,13 +39,52 @@ stages:
   - job: Deploy
     displayName: 'Update Container App'
     steps:
+
+    # ✅ NEW: Grant Container App permission to pull from ACR
+    - task: AzureCLI@2
+      displayName: 'Link ACR to Container App (Managed Identity)'
+      inputs:
+        azureSubscription: '$(azureSubscription)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          # Enable system-assigned managed identity on the Container App
+          az containerapp identity assign \
+            --name $(containerAppName) \
+            --resource-group $(resourceGroup) \
+            --system-assigned
+
+          # Get the principal ID of the managed identity
+          PRINCIPAL_ID=$(az containerapp show \
+            --name $(containerAppName) \
+            --resource-group $(resourceGroup) \
+            --query identity.principalId -o tsv)
+
+          # Get the ACR resource ID
+          ACR_ID=$(az acr show \
+            --name $(acrName) \
+            --query id -o tsv)
+
+          # Grant AcrPull role to the managed identity
+          az role assignment create \
+            --assignee $PRINCIPAL_ID \
+            --role AcrPull \
+            --scope $ACR_ID
+
+          # Link ACR to the Container App using managed identity
+          az containerapp registry set \
+            --name $(containerAppName) \
+            --resource-group $(resourceGroup) \
+            --server $(acrLoginServer) \
+            --identity system
+
     - task: AzureContainerApps@1
+      displayName: 'Deploy to Container App'
       inputs:
         azureSubscription: '$(azureSubscription)'
         containerAppName: '$(containerAppName)'
         resourceGroup: '$(resourceGroup)'
         imageToDeploy: '$(acrLoginServer)/$(imageRepository):$(tag)'
-        # We don't need STORAGE_ACCOUNT_KEY anymore because we use Managed Identity!
         environmentVariables: |
           KEY_VAULT_URL=https://flxlock.vault.azure.net/
           STORAGE_ACCOUNT_NAME=flxcontainer
