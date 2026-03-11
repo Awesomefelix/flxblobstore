@@ -1,9 +1,7 @@
 trigger:
   - main
-
 pool:
   vmImage: ubuntu-latest
-
 variables:
   azureSubscription: 'FLX'
   acrLoginServer: 'flxstoreacr.azurecr.io'
@@ -12,7 +10,6 @@ variables:
   containerAppName: 'flxstore'
   resourceGroup: 'FLX-TEST'
   tag: '$(Build.BuildId)'
-
 stages:
 - stage: Build
   displayName: 'Build and Push'
@@ -30,7 +27,6 @@ stages:
         tags: |
           $(tag)
           latest
-
 - stage: Deploy
   displayName: 'Deploy to Container App'
   dependsOn: Build
@@ -39,8 +35,6 @@ stages:
   - job: Deploy
     displayName: 'Update Container App'
     steps:
-
-    # ✅ NEW: Grant Container App permission to pull from ACR
     - task: AzureCLI@2
       displayName: 'Link ACR to Container App (Managed Identity)'
       inputs:
@@ -48,36 +42,26 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          # Enable system-assigned managed identity on the Container App
           az containerapp identity assign \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
             --system-assigned
-
-          # Get the principal ID of the managed identity
           PRINCIPAL_ID=$(az containerapp show \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
             --query identity.principalId -o tsv)
-
-          # Get the ACR resource ID
           ACR_ID=$(az acr show \
             --name $(acrName) \
             --query id -o tsv)
-
-          # Grant AcrPull role to the managed identity
           az role assignment create \
             --assignee $PRINCIPAL_ID \
             --role AcrPull \
             --scope $ACR_ID
-
-          # Link ACR to the Container App using managed identity
           az containerapp registry set \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
             --server $(acrLoginServer) \
             --identity system
-
     - task: AzureContainerApps@1
       displayName: 'Deploy to Container App'
       inputs:
@@ -85,9 +69,4 @@ stages:
         containerAppName: '$(containerAppName)'
         resourceGroup: '$(resourceGroup)'
         imageToDeploy: '$(acrLoginServer)/$(imageRepository):$(tag)'
-        environmentVariables: |
-          KEY_VAULT_URL=https://flxlock.vault.azure.net/
-          STORAGE_ACCOUNT_NAME=flxcontainer
-          CONTAINER_NAME=images
-          NODE_ENV=production
-          PORT=80
+        environmentVariables: 'KEY_VAULT_URL=https://flxlock.vault.azure.net/ STORAGE_ACCOUNT_NAME=flxcontainer CONTAINER_NAME=images NODE_ENV=production PORT=80'
