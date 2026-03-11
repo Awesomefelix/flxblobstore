@@ -90,4 +90,4 @@ stages:
           STORAGE_ACCOUNT_NAME=flxcontainer
           CONTAINER_NAME=images
           NODE_ENV=production
-          PORT=8080
+          PORT=80
