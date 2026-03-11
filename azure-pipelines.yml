@@ -5,7 +5,7 @@ trigger:
   - main
 
 pool:
-  name: 'flxbuilder'
+  vmImage: ubuntu-latest
 
 variables:
   azureSubscription: 'FLX'  #
