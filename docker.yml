@@ -69,5 +69,6 @@ stages:
         containerAppName: '$(containerAppName)'
         resourceGroup: '$(resourceGroup)'
         imageToDeploy: '$(acrLoginServer)/$(imageRepository):$(tag)'
+        acrName: '$(acrName)'
         targetPort: 3000
         environmentVariables: 'KEY_VAULT_URL=https://flxlock.vault.azure.net/ STORAGE_ACCOUNT_NAME=flxcontainer CONTAINER_NAME=images NODE_ENV=production PORT=3000 STORAGE_ACCOUNT_KEY=$(storageAccountKey)'
