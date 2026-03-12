@@ -36,39 +36,51 @@ stages:
     displayName: 'Update Container App'
     steps:
     - task: AzureCLI@2
-      displayName: 'Link ACR to Container App (Managed Identity)'
+      displayName: 'Deploy to Container App'
       inputs:
         azureSubscription: '$(azureSubscription)'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
+          # Ensure managed identity is assigned
           az containerapp identity assign \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
             --system-assigned
+
+          # Get principal ID
           PRINCIPAL_ID=$(az containerapp show \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
             --query identity.principalId -o tsv)
+
+          # Get ACR resource ID
           ACR_ID=$(az acr show \
             --name $(acrName) \
             --query id -o tsv)
+
+          # Grant AcrPull role
           az role assignment create \
             --assignee $PRINCIPAL_ID \
             --role AcrPull \
-            --scope $ACR_ID
+            --scope $ACR_ID || true
+
+          # Link ACR to Container App
           az containerapp registry set \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
             --server $(acrLoginServer) \
             --identity system
-    - task: AzureContainerApps@1
-      displayName: 'Deploy to Container App'
-      inputs:
-        azureSubscription: '$(azureSubscription)'
-        containerAppName: '$(containerAppName)'
-        resourceGroup: '$(resourceGroup)'
-        imageToDeploy: '$(acrLoginServer)/$(imageRepository):$(tag)'
-        acrName: '$(acrName)'
-        targetPort: 3000
-        environmentVariables: 'KEY_VAULT_URL=https://flxlock.vault.azure.net/ STORAGE_ACCOUNT_NAME=flxcontainer CONTAINER_NAME=images NODE_ENV=production PORT=3000 STORAGE_ACCOUNT_KEY=$(storageAccountKey)'
+
+          # Deploy new image
+          az containerapp update \
+            --name $(containerAppName) \
+            --resource-group $(resourceGroup) \
+            --image $(acrLoginServer)/$(imageRepository):$(tag) \
+            --set-env-vars \
+              KEY_VAULT_URL=https://flxlock.vault.azure.net/ \
+              STORAGE_ACCOUNT_NAME=flxcontainer \
+              CONTAINER_NAME=images \
+              NODE_ENV=production \
+              PORT=3000 \
+              STORAGE_ACCOUNT_KEY=$(storageAccountKey)
