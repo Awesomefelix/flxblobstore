@@ -42,37 +42,31 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          # Ensure managed identity is assigned
           az containerapp identity assign \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
             --system-assigned
 
-          # Get principal ID
           PRINCIPAL_ID=$(az containerapp show \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
             --query identity.principalId -o tsv)
 
-          # Get ACR resource ID
           ACR_ID=$(az acr show \
             --name $(acrName) \
             --query id -o tsv)
 
-          # Grant AcrPull role
           az role assignment create \
             --assignee $PRINCIPAL_ID \
             --role AcrPull \
             --scope $ACR_ID || true
 
-          # Link ACR to Container App
           az containerapp registry set \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
             --server $(acrLoginServer) \
             --identity system
 
-          # Deploy new image
           az containerapp update \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
@@ -83,4 +77,6 @@ stages:
               CONTAINER_NAME=images \
               NODE_ENV=production \
               PORT=3000 \
-              STORAGE_ACCOUNT_KEY=$(storageAccountKey)
+              STORAGE_ACCOUNT_KEY=$STORAGE_KEY
+      env:
+        STORAGE_KEY: $(storageAccountKey)
