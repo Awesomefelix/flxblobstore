@@ -15,7 +15,9 @@ if (process.env.NODE_ENV !== 'production') {
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 const port = process.env.PORT || 3000;
-const host = process.env.WEBSITE_HOSTNAME ? '0.0.0.0' : 'localhost';
+
+// ✅ CORRECTION: Hardcoded to '0.0.0.0' so it accepts external traffic from the Docker container proxy
+const host = '0.0.0.0'; 
 
 // Set view engine to EJS
 app.set('view engine', 'ejs');
