@@ -1,7 +1,9 @@
 trigger:
   - main
+
 pool:
   vmImage: ubuntu-latest
+
 variables:
   azureSubscription: 'FLX'
   acrLoginServer: 'flxstoreacr.azurecr.io'
@@ -10,6 +12,7 @@ variables:
   containerAppName: 'flxstore'
   resourceGroup: 'FLX-TEST'
   tag: '$(Build.BuildId)'
+
 stages:
 - stage: Build
   displayName: 'Build and Push'
@@ -27,6 +30,7 @@ stages:
         tags: |
           $(tag)
           latest
+
 - stage: Deploy
   displayName: 'Deploy to Container App'
   dependsOn: Build
@@ -76,7 +80,7 @@ stages:
               STORAGE_ACCOUNT_NAME=flxcontainer \
               CONTAINER_NAME=images \
               NODE_ENV=production \
-              PORT=3000 \
-              STORAGE_ACCOUNT_KEY=$STORAGE_KEY
+              PORT=8080 \
+              STORAGE_ACCOUNT_KEY="$STORAGE_KEY"
       env:
         STORAGE_KEY: $(storageAccountKey)
